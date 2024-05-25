@@ -19,31 +19,34 @@ fc2-gokafka
 ├── go.mod                   # Go module dependencies
 ```
 
-Prerequisites:
+# Prerequisites:
 
 Docker and Docker Compose installed on your machine.
 Go programming language installed.
 
 # Setup:
 
-Step 1: Clone the Repository
+# Step 1: Clone the Repository
 
 git clone <repository_url>
 cd fc2-gokafka
 
-Step 2: Build and Start the Docker Containers
+# Step 2: Build and Start the Docker Containers
 
 docker-compose up -d
+
 This command will start Zookeeper and Kafka services in detached mode.
 
-Step 3: Running the Producer
+# Step 3: Running the Producer
 
 Navigate to the producer directory and run the producer to send a message to Kafka.
+
 cd cmd/producer
 go run main.go
 
-Step 4: Running the Consumer
+# Step 4: Running the Consumer
 
 Navigate to the consumer directory and run the consumer to read messages from Kafka.
+
 cd cmd/consumer
 go run main.go
