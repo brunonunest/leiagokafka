@@ -1,6 +1,6 @@
 # LeiaGoKafka Project
 
-This project demonstrates a simple setup of a Kafka producer and consumer using Go, Docker, and Docker Compose. It includes configurations for Kafka and Zookeeper using Docker Compose and Go code to produce and consume messages from Kafka topics.
+This project demonstrates a simple setup of a Kafka producer and consumer using Go, Docker, and Docker Compose, being able to help Leia find Obi-Wan. It includes configurations for Kafka and Zookeeper using Docker Compose and Go code to produce and consume messages from Kafka topics.
 
 ## Project Structure
 
