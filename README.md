@@ -46,7 +46,11 @@ go run main.go
 
 # Step 4: Running the Consumer
 
-Navigate to the consumer directory and run the consumer to read messages from Kafka.
+Enter the docker Kafka instance, then create a topic and run your Consumer
 
-cd cmd/consumer
-go run main.go
+docker exec -it leiagokafka-kafka-1 bash
+
+kafka-console-consumer --bootstrap-server=localhost:9092 --topic=test-topic
+
+kafka-console-consumer --bootstrap-server=localhost:9092 --topic=test-topic
+
