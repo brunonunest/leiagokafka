@@ -50,7 +50,7 @@ Enter the docker Kafka instance, then create a topic and run your Consumer
 
 docker exec -it leiagokafka-kafka-1 bash
 
-kafka-console-consumer --bootstrap-server=localhost:9092 --topic=test-topic
+kafka-topics --create --bootstrap-server=localhost:9092 --topic=test-topic partitions=3
 
 kafka-console-consumer --bootstrap-server=localhost:9092 --topic=test-topic
 
