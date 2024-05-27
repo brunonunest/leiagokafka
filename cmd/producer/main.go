@@ -2,21 +2,22 @@ package main
 
 import (
 	"context"
-	"github.com/segmentio/kafka-go"
 	"log"
+
+	"github.com/segmentio/kafka-go"
 )
 
 func main() {
 	// Kafka broker address
-	brokerAddress := "localhost:9092"
+	brokerAddress := "kafka:9092"
 	// Topic to produce messages to
-	topic := "test-topic"
+	topic := "high-throughput-topic"
 
 	// Create a new Kafka writer with the broker address and topic
 	writer := kafka.NewWriter(kafka.WriterConfig{
 		Brokers:  []string{brokerAddress},
 		Topic:    topic,
-		Balancer: &kafka.LeastBytes{}, // Load balancing strategy
+		Balancer: &kafka.LeastBytes{},
 	})
 
 	// Create a message to send
@@ -28,12 +29,12 @@ func main() {
 	// Send the message
 	err := writer.WriteMessages(context.Background(), message)
 	if err != nil {
-		log.Fatalf("Failed to write messages: %v", err)
+		log.Fatalf("failed to write messages: %v", err)
 	}
 
 	// Log success and close writer
 	log.Println("Message sent successfully")
 	if err := writer.Close(); err != nil {
-		log.Fatalf("Failed to close writer: %v", err)
+		log.Fatalf("failed to close writer: %v", err)
 	}
 }
