@@ -1,40 +1,65 @@
 package main
 
 import (
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"fmt"
 	"log"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
+// Message represents the structure of a message consumed from Kafka.
+type Message struct {
+	Value string
+}
+
 func main() {
-	// Configuration for Kafka consumer
+	// Channel for receiving messages from the consumer goroutine.
+	messageChannel := make(chan Message, 100)
+
+	// Number of workers
+	numWorkers := 5
+
+	// Start the consumer worker pool.
+	for i := 0; i < numWorkers; i++ {
+		go consumerWorker(messageChannel)
+	}
+
+	// Initialize the Kafka consumer.
 	configMap := &kafka.ConfigMap{
-		"bootstrap.servers": "fc2-gokafka-kafka-1:9092", // Kafka broker address
-		"client.id":         "goapp-consumer",           // Consumer ID
-		"group.id":          "goapp-group2",             // Consumer group ID
-		"auto.offset.reset": "earliest",                 // Read from the beginning if no offset is present
+		"bootstrap.servers": "kafka:9092",
+		"client.id":         "goapp-consumer",
+		"group.id":          "goapp-group2",
+		"auto.offset.reset": "earliest",
 	}
 
-	// Create a new Kafka consumer
-	c, err := kafka.NewConsumer(configMap)
+	consumer, err := kafka.NewConsumer(configMap)
 	if err != nil {
-		log.Fatalf("Error creating consumer: %v", err)
+		log.Fatalf("error creating consumer: %v", err)
 	}
-	defer c.Close()
+	defer consumer.Close() // Ensure the consumer is closed when done.
 
-	// Topics to subscribe to
-	topics := []string{"test-topic"}
-	if err := c.SubscribeTopics(topics, nil); err != nil {
-		log.Fatalf("Error subscribing to topics: %v", err)
-	}
+	// Subscribe to the topic.
+	topics := []string{"high-throughput-topic"}
+	consumer.SubscribeTopics(topics, nil)
 
-	// Continuously read messages
 	for {
-		msg, err := c.ReadMessage(-1)
+		// Read message from Kafka.
+		msg, err := consumer.ReadMessage(-1)
 		if err == nil {
-			log.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
+			message := Message{
+				Value: string(msg.Value),
+			}
+			messageChannel <- message // Send the message to the channel.
 		} else {
-			// Errors are typically informational, the consumer will automatically recover
-			log.Printf("Consumer error: %v (%v)\n", err, msg)
+			log.Printf("error consuming message: %v", err)
 		}
+	}
+}
+
+// consumerWorker processes messages from the channel.
+func consumerWorker(messageChannel chan Message) {
+	for message := range messageChannel {
+		// Process the consumed message.
+		fmt.Println("Consumed message:", message.Value)
 	}
 }
