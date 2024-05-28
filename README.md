@@ -1,6 +1,6 @@
 # LeiaGoKafka Project
 
-This project demonstrates a simple setup of a Kafka producer and consumer using Go, Docker, and Docker Compose, being able to help Leia find Obi-Wan. It includes configurations for Kafka and Zookeeper using Docker Compose and Go code to produce and consume messages from Kafka topics.
+This project demonstrates a simple high throughput setup system of a Kafka producer and consumer using Go, Docker, and Docker Compose, being able to help Leia find Obi-Wan. It includes configurations for Kafka, Zookeeper and Go using Docker Compose and Go code to produce and consume messages from Kafka topics, using goroutines and channels.
 
 ## Project Structure
 
@@ -29,28 +29,30 @@ Go programming language installed.
 # Step 1: Clone the Repository
 
 git clone <repository_url>
-cd fc2-gokafka
+cd leiagokafka
 
 # Step 2: Build and Start the Docker Containers
 
-docker-compose up -d
+docker-compose up --build -d
 
-This command will start Zookeeper and Kafka services in detached mode.
+This command will start Zookeeper, Kafka and Go services in detached mode.
 
-# Step 3: Running the Producer
+# Step 3: Create the topic in Kafka
 
-Navigate to the producer directory and run the producer to send a message to Kafka.
-
-cd cmd/producer
-go run main.go
-
-# Step 4: Running the Consumer
-
-Enter the docker Kafka instance, then create a topic and run your Consumer
+Access the Kafka docker container, and create the topic.
 
 docker exec -it leiagokafka-kafka-1 bash
 
-kafka-topics --create --bootstrap-server=localhost:9092 --topic=test-topic partitions=3
+kafka-topics --create --bootstrap-server=localhost:9092 --topic=high-throughput-topic partitions=3
 
-kafka-console-consumer --bootstrap-server=localhost:9092 --topic=test-topic
+# Step 4: Running the Consumer
 
+Run the consumer from container to receive messages from Kafka created topic.
+
+docker-compose exec goapp ./consumer
+
+# Step 5: Running the Producer
+
+Run the producer from container to send messages to Kafka created topic.
+
+docker-compose exec goapp ./producer
