@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
@@ -16,12 +21,19 @@ func main() {
 	// Channel for receiving messages from the consumer goroutine.
 	messageChannel := make(chan Message, 100)
 
+	// Context for controlling the lifetime of workers.
+	ctx, cancel := context.WithCancel(context.Background())
+
 	// Number of workers
 	numWorkers := 5
 
+	// Use a wait group to wait for all consumer workers to finish.
+	var wg sync.WaitGroup
+
 	// Start the consumer worker pool.
 	for i := 0; i < numWorkers; i++ {
-		go consumerWorker(messageChannel)
+		wg.Add(1)
+		go consumerWorker(ctx, messageChannel, &wg)
 	}
 
 	// Initialize the Kafka consumer.
@@ -42,24 +54,47 @@ func main() {
 	topics := []string{"high-throughput-topic"}
 	consumer.SubscribeTopics(topics, nil)
 
-	for {
-		// Read message from Kafka.
-		msg, err := consumer.ReadMessage(-1)
-		if err == nil {
-			message := Message{
-				Value: string(msg.Value),
+	// Handle graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		for {
+			// Read message from Kafka.
+			msg, err := consumer.ReadMessage(-1)
+			if err == nil {
+				message := Message{
+					Value: string(msg.Value),
+				}
+				messageChannel <- message // Send the message to the channel.
+			} else {
+				log.Printf("error consuming message: %v", err)
 			}
-			messageChannel <- message // Send the message to the channel.
-		} else {
-			log.Printf("error consuming message: %v", err)
 		}
-	}
+	}()
+
+	<-sigChan
+	log.Println("Shutting down gracefully...")
+	cancel()              // Cancel the context to stop consumer workers
+	close(messageChannel) // Close the channel to stop reading
+	wg.Wait()             // Wait for all workers to finish
+	log.Println("Consumer shutdown complete")
 }
 
 // consumerWorker processes messages from the channel.
-func consumerWorker(messageChannel chan Message) {
-	for message := range messageChannel {
-		// Process the consumed message.
-		fmt.Println("Consumed message:", message.Value)
+func consumerWorker(ctx context.Context, messageChannel chan Message, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	for {
+		select {
+		case message, ok := <-messageChannel:
+			if !ok {
+				return // Channel is closed
+			}
+			// Process the consumed message.
+			fmt.Println("Consumed message:", message.Value)
+		case <-ctx.Done():
+			return // Context is cancelled
+		}
 	}
 }
